@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Gold Cobra — project export
 
 ## What's in here
@@ -48,3 +49,6 @@ new — optional, but showing `error` will surface failed-login messages).
 cd backend && npm install && npm start
 cd frontend && npm install && npm run dev
 ```
+=======
+# gold-cobra
+>>>>>>> 8290111dd15005e1e92601ac020f4524d9b49547
