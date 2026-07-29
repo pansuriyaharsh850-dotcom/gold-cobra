@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================
+   Root / resets
+   ========================================================== */
+:root {
+  --gc-blue: #2563eb;
+  --gc-blue-dark: #1d4ed8;
+  --gc-bg: #f3f4f6;
+  color-scheme: light;
+}
+
+html {
+  font-size: clamp(15px, 0.5vw + 14px, 16px);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--gc-bg);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--gc-blue);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (pointer: coarse) {
+  button,
+  select,
+  input,
+  a.gc-tap {
+    min-height: 44px;
+  }
+}
+
+@media (min-width: 768px) {
+  *::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  .gc-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+
+  .gc-mobile-card {
+    @apply bg-white border border-gray-200 rounded-xl p-4 shadow-sm;
+  }
+}
