@@ -142,6 +142,7 @@ export default function App() {
         selectedRoad={selectedRoad}
         setSelectedRoad={setSelectedRoad}
         onLogout={logout}
+        canEdit={canEdit}
       />
 
       <main className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
@@ -154,7 +155,7 @@ export default function App() {
 
         {!canEdit && (
           <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-lg px-4 py-2 text-sm font-medium">
-            Viewing in read-only mode.
+            Viewing in read-only mode. Contact an admin for edit access.
           </div>
         )}
 
