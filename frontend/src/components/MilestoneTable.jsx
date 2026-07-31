@@ -235,11 +235,11 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                     </td>
 
                     <td className="px-4 py-4 text-center">
-                      {row.target}
+                      {row.target}m
                     </td>
 
                     <td className="px-4 py-4 text-center text-green-600 font-bold">
-                      {row.achieved}
+                      {row.achieved}m
                     </td>
 
                     <td className="px-4 py-4">

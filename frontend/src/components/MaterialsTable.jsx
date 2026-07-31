@@ -68,7 +68,7 @@ export default function MaterialsTable({ data = [], road, onChanged, canEdit = t
         <div className="flex items-center gap-2">
           <Package className="text-blue-600 shrink-0" size={20} />
           <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-            Material Overview
+            TM
           </h2>
         </div>
 

@@ -28,10 +28,10 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
     }
 
     switch (status.toLowerCase()) {
-      case "delivered":
+      case "ok":
         return "bg-green-100 text-green-700";
 
-      case "in transit":
+      case "ok":
         return "bg-yellow-100 text-yellow-700";
 
       case "pending":

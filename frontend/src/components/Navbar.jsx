@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Shield, LogOut, Menu, X, Plus, Trash2 } from "lucide-react";
+import { LogOut, Menu, X, Plus, Trash2 } from "lucide-react";
 import axios from "axios";
 
 import { wardApi, roadApi } from "../api/client";
@@ -8,11 +8,21 @@ import CrudModal from "./CrudModal";
 const API = "https://gold-cobra.onrender.com/api";
 
 const WARD_FIELDS = [
-  { name: "ward_number", label: "Ward Number", type: "text", required: true },
+  {
+    name: "ward_number",
+    label: "Ward Number",
+    type: "text",
+    required: true,
+  },
 ];
 
 const ROAD_FIELDS = [
-  { name: "road_name", label: "Road Name", type: "text", required: true },
+  {
+    name: "road_name",
+    label: "Road Name",
+    type: "text",
+    required: true,
+  },
 ];
 
 export default function Navbar({
@@ -48,7 +58,10 @@ export default function Navbar({
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const loadWards = async (preferWard) => {
@@ -84,7 +97,10 @@ export default function Navbar({
   };
 
   async function handleAddWard(values) {
-    await wardApi.add({ ward_number: values.ward_number });
+    await wardApi.add({
+      ward_number: values.ward_number,
+    });
+
     setWardModalOpen(false);
     await loadWards(values.ward_number);
   }
@@ -104,14 +120,22 @@ export default function Navbar({
     });
 
     setRoadModalOpen(false);
+
     await loadRoads(selectedWard, values.road_name);
   }
 
   async function handleDeleteRoad() {
-    const currentRoad = roads.find((r) => r.road_name === selectedRoad);
+    const currentRoad = roads.find(
+      (r) => r.road_name === selectedRoad
+    );
+
     if (!currentRoad) return;
 
-    if (!window.confirm(`Delete road "${selectedRoad}"? This removes all its data.`)) {
+    if (
+      !window.confirm(
+        `Delete road "${selectedRoad}"?\n\nThis removes all its data.`
+      )
+    ) {
       return;
     }
 
@@ -119,7 +143,10 @@ export default function Navbar({
       await roadApi.remove(currentRoad.id);
       await loadRoads(selectedWard);
     } catch (err) {
-      window.alert(err?.response?.data?.message || "Failed to delete road.");
+      window.alert(
+        err?.response?.data?.message ||
+          "Failed to delete road."
+      );
     }
   }
 
@@ -128,7 +155,9 @@ export default function Navbar({
       <select
         value={selectedWard}
         onChange={(e) => setSelectedWard(e.target.value)}
-        className={`border rounded-lg px-4 ${mobile ? "py-3" : "py-2"}`}
+        className={`h-10 border border-gray-300 rounded-lg px-4 bg-white ${
+          mobile ? "w-full" : ""
+        }`}
       >
         {wards.map((ward) => (
           <option key={ward.id} value={ward.ward_number}>
@@ -141,8 +170,7 @@ export default function Navbar({
         <button
           type="button"
           onClick={() => setWardModalOpen(true)}
-          title="Add Ward"
-          className="border rounded-lg px-2.5 py-2 text-blue-600 hover:bg-blue-50 shrink-0"
+          className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-blue-600 hover:bg-blue-50"
         >
           <Plus size={18} />
         </button>
@@ -155,7 +183,9 @@ export default function Navbar({
       <select
         value={selectedRoad}
         onChange={(e) => setSelectedRoad(e.target.value)}
-        className={`border rounded-lg px-4 ${mobile ? "py-3" : "py-2"}`}
+        className={`h-10 border border-gray-300 rounded-lg px-4 bg-white ${
+          mobile ? "w-full" : ""
+        }`}
       >
         {roads.map((road) => (
           <option key={road.id} value={road.road_name}>
@@ -169,17 +199,16 @@ export default function Navbar({
           <button
             type="button"
             onClick={() => setRoadModalOpen(true)}
-            title="Add Road"
-            className="border rounded-lg px-2.5 py-2 text-blue-600 hover:bg-blue-50 shrink-0"
+            className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-blue-600 hover:bg-blue-50"
           >
             <Plus size={18} />
           </button>
+
           <button
             type="button"
             onClick={handleDeleteRoad}
             disabled={!selectedRoad}
-            title="Delete current road"
-            className="border rounded-lg px-2.5 py-2 text-red-600 hover:bg-red-50 shrink-0 disabled:opacity-40"
+            className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40"
           >
             <Trash2 size={18} />
           </button>
@@ -189,67 +218,73 @@ export default function Navbar({
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
+    <>
+      <header className="sticky top-0 z-50 bg-white shadow-md px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between">
 
-      <div className="flex items-center justify-between gap-3">
-
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="bg-blue-600 p-2 sm:p-3 rounded-lg shrink-0">
-            <Shield className="text-white" size={20} />
+          {/* Logo Container */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center">
+  <img
+    src="/logo.png"
+    alt="Gold Cobra"
+    className="h-24 w-auto object-contain"
+  />
+</div>
           </div>
 
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-700 truncate">
-              Gold Cobra
-            </h1>
+          {/* Desktop Menu */}
+          <div className="hidden lg:flex items-center gap-3">
 
-            <p className="hidden sm:block text-xs lg:text-sm text-gray-500">
-              Road Infrastructure Management
-            </p>
+            {wardControls(false)}
+
+            {roadControls(false)}
+
+            <button
+              onClick={onLogout}
+              className="w-10 h-10 rounded-lg bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition"
+            >
+              <LogOut size={18} />
+            </button>
+
           </div>
-        </div>
 
-        <div className="hidden lg:flex items-center gap-2">
-
-          {wardControls(false)}
-          {roadControls(false)}
-
+          {/* Mobile Menu Button */}
           <button
-            onClick={onLogout}
-            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg"
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="lg:hidden p-2 rounded-lg border"
           >
-            <LogOut size={18} />
+            {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
 
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="lg:hidden bg-blue-50 p-2 rounded-lg"
-        >
-          {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden mt-5 flex flex-col gap-3">
 
-      </div>
+            <div className="flex gap-2">
+              {wardControls(true)}
+            </div>
 
-      {isMenuOpen && (
-        <div className="lg:hidden mt-4 flex flex-col gap-3">
+            <div className="flex gap-2">
+              {roadControls(true)}
+            </div>
 
-          <div className="flex gap-2">{wardControls(true)}</div>
-          <div className="flex gap-2">{roadControls(true)}</div>
+            <button
+              onClick={onLogout}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-lg py-3 flex items-center justify-center gap-2"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
 
-          <button
-            onClick={onLogout}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-lg p-3 flex items-center justify-center gap-2"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
+          </div>
+        )}
+      </header>
 
-        </div>
-      )}
-
+      {/* Ward Modal */}
       {canEdit && wardModalOpen && (
         <CrudModal
           title="Add Ward"
@@ -261,6 +296,7 @@ export default function Navbar({
         />
       )}
 
+      {/* Road Modal */}
       {canEdit && roadModalOpen && (
         <CrudModal
           title={`Add Road (Ward ${selectedWard})`}
@@ -271,7 +307,6 @@ export default function Navbar({
           submitLabel="Add"
         />
       )}
-
-    </header>
+    </>
   );
 }
