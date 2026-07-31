@@ -35,8 +35,10 @@ exports.getBom = async (req, res) => {
         id,
         item_description AS item,
         item_category AS type,
+        technical_specs AS specs,
         quantity AS qty,
         unit,
+        unit_rate,
         total_cost,
         status_remarks AS status
       FROM bill_of_materials
@@ -80,8 +82,10 @@ exports.getBomById = async (req, res) => {
         road_id,
         item_description AS item,
         item_category AS type,
+        technical_specs AS specs,
         quantity AS qty,
         unit,
+        unit_rate,
         total_cost,
         status_remarks AS status
       FROM bill_of_materials
@@ -127,8 +131,10 @@ exports.addBom = async (req, res) => {
       road,
       item,
       type,
+      specs,
       qty,
       unit,
+      unitRate,
       totalCost,
       status
     } = req.body;
@@ -154,8 +160,10 @@ exports.addBom = async (req, res) => {
         road_id,
         item_description,
         item_category,
+        technical_specs,
         quantity,
         unit,
+        unit_rate,
         total_cost,
         status_remarks
       )
@@ -167,7 +175,9 @@ exports.addBom = async (req, res) => {
         $4,
         $5,
         $6,
-        $7
+        $7,
+        $8,
+        $9
       )
       RETURNING *;
       `,
@@ -175,8 +185,10 @@ exports.addBom = async (req, res) => {
         roadId,
         item,
         type,
+        specs,
         qty,
         unit,
+        unitRate || 0,
         totalCost || 0,
         status
       ]
@@ -214,8 +226,10 @@ exports.updateBom = async (req, res) => {
     const {
       item,
       type,
+      specs,
       qty,
       unit,
+      unitRate,
       totalCost,
       status
     } = req.body;
@@ -226,18 +240,22 @@ exports.updateBom = async (req, res) => {
       SET
         item_description = $1,
         item_category = $2,
-        quantity = $3,
-        unit = $4,
-        total_cost = $5,
-        status_remarks = $6
-      WHERE id = $7
+        technical_specs = $3,
+        quantity = $4,
+        unit = $5,
+        unit_rate = $6,
+        total_cost = $7,
+        status_remarks = $8
+      WHERE id = $9
       RETURNING *;
       `,
       [
         item,
         type,
+        specs,
         qty,
         unit,
+        unitRate || 0,
         totalCost || 0,
         status,
         id

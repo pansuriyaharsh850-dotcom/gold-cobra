@@ -9,9 +9,11 @@ const STATUS_OPTIONS = ["Pending", "In Transit", "Delivered"];
 const FIELDS = [
   { name: "item", label: "Item", type: "text", required: true },
   { name: "type", label: "Category", type: "text" },
+  { name: "specs", label: "Technical Specifications", type: "text" },
   { name: "qty", label: "Quantity", type: "number", required: true },
   { name: "unit", label: "Unit", type: "text" },
-  { name: "totalCost", label: "Total Cost", type: "number" },
+  { name: "unitRate", label: "Unit Rate", type: "number" },
+  { name: "totalCost", label: "Total Cost (auto)", type: "number" },
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS },
 ];
 
@@ -46,17 +48,32 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
   }
 
   function openEdit(item) {
-    setEditingItem(item);
+    setEditingItem({ ...item, unitRate: item.unit_rate });
     setModalOpen(true);
   }
 
   async function handleSubmit(values) {
+    const qty = values.qty === "" ? 0 : Number(values.qty);
+    const unitRate = values.unitRate === "" ? 0 : Number(values.unitRate);
+
+    // If a unit rate was entered, Total Cost is always derived from it
+    // (Qty x Rate). If no rate is given, fall back to whatever was
+    // typed directly into Total Cost.
+    const computedTotal =
+      unitRate > 0
+        ? qty * unitRate
+        : values.totalCost === ""
+        ? 0
+        : Number(values.totalCost);
+
     const payload = {
       item: values.item,
       type: values.type,
-      qty: values.qty === "" ? null : Number(values.qty),
+      specs: values.specs,
+      qty: values.qty === "" ? null : qty,
       unit: values.unit,
-      totalCost: values.totalCost === "" ? 0 : Number(values.totalCost),
+      unitRate,
+      totalCost: computedTotal,
       status: values.status,
     };
 
@@ -135,6 +152,11 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                     <p className="text-xs text-gray-500 mt-0.5">
                       {item.type}
                     </p>
+                    {item.specs && (
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">
+                        {item.specs}
+                      </p>
+                    )}
                   </div>
 
                   <span
@@ -151,6 +173,13 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                   <span>Quantity</span>
                   <span className="font-semibold text-gray-800">
                     {item.qty} {item.unit}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-sm text-gray-600 mt-1">
+                  <span>Total Cost</span>
+                  <span className="font-semibold text-gray-800">
+                    ₹{Number(item.total_cost || 0).toLocaleString()}
                   </span>
                 </div>
 
@@ -184,7 +213,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
           {/* Full table — tablet and up */}
           <div className="hidden md:block gc-table-scroll">
 
-            <table className="min-w-[640px] w-full border border-gray-200 rounded-lg">
+            <table className="min-w-[900px] w-full border border-gray-200 rounded-lg">
 
               <thead className="bg-blue-600 text-white">
 
@@ -192,8 +221,11 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
 
                   <th className="px-4 py-3 text-left">Item</th>
                   <th className="px-4 py-3 text-left">Category</th>
+                  <th className="px-4 py-3 text-left">Specifications</th>
                   <th className="px-4 py-3 text-center">Quantity</th>
                   <th className="px-4 py-3 text-center">Unit</th>
+                  <th className="px-4 py-3 text-center">Unit Rate</th>
+                  <th className="px-4 py-3 text-center">Total Cost</th>
                   <th className="px-4 py-3 text-center">Status</th>
                   {canEdit && <th className="px-4 py-3 text-center">Actions</th>}
 
@@ -218,12 +250,24 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                       {item.type}
                     </td>
 
+                    <td className="px-4 py-4 text-gray-500 text-sm">
+                      {item.specs}
+                    </td>
+
                     <td className="px-4 py-4 text-center">
                       {item.qty}
                     </td>
 
                     <td className="px-4 py-4 text-center">
                       {item.unit}
+                    </td>
+
+                    <td className="px-4 py-4 text-center">
+                      ₹{Number(item.unit_rate || 0).toLocaleString()}
+                    </td>
+
+                    <td className="px-4 py-4 text-center font-semibold">
+                      ₹{Number(item.total_cost || 0).toLocaleString()}
                     </td>
 
                     <td className="px-4 py-4 text-center">

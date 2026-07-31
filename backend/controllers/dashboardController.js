@@ -57,8 +57,11 @@ exports.getDashboardData = async (req, res) => {
         id,
         item_description AS item,
         item_category AS type,
+        technical_specs AS specs,
         quantity AS qty,
         unit,
+        unit_rate,
+        total_cost,
         status_remarks AS status
       FROM bill_of_materials
       WHERE road_id = $1
