@@ -1,6 +1,54 @@
 const db = require("../config/db");
 
 // ==============================================
+// SET Road Image (by road name) — admin only
+// PUT /api/roads/image
+// ==============================================
+exports.updateRoadImage = async (req, res) => {
+  try {
+    const { road, imageUrl } = req.body;
+
+    if (!road) {
+      return res.status(400).json({
+        success: false,
+        message: "Road name is required."
+      });
+    }
+
+    const result = await db.query(
+      `
+      UPDATE roads
+      SET image_url = $1
+      WHERE road_name = $2
+      RETURNING id, road_name, image_url;
+      `,
+      [imageUrl || null, road]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Road not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Road image updated successfully.",
+      road: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error("Update Road Image Error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+// ==============================================
 // CREATE Road
 // POST /api/roads
 // ==============================================

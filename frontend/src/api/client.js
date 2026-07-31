@@ -66,6 +66,7 @@ export const roadApi = {
   add: (payload) => client.post("/roads", payload),
   update: (id, payload) => client.put(`/roads/${id}`, payload),
   remove: (id) => client.delete(`/roads/${id}`),
+  setImage: (payload) => client.put("/roads/image", payload),
 };
 
 export default client;

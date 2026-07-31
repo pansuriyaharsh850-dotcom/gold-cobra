@@ -17,7 +17,7 @@ exports.getDashboardData = async (req, res) => {
 
     // Get Road ID
     const roadResult = await db.query(
-      "SELECT id FROM roads WHERE road_name = $1",
+      "SELECT id, road_name, image_url FROM roads WHERE road_name = $1",
       [road]
     );
 
@@ -29,6 +29,7 @@ exports.getDashboardData = async (req, res) => {
     }
 
     const roadId = roadResult.rows[0].id;
+    const roadInfo = roadResult.rows[0];
 
     // ============================
     // Milestones
@@ -90,6 +91,7 @@ exports.getDashboardData = async (req, res) => {
 
     res.json({
       success: true,
+      road: roadInfo,
       milestones: milestoneResult.rows,
       bom: bomResult.rows,
       mixOverview: materialResult.rows

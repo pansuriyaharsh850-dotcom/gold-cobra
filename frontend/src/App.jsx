@@ -32,6 +32,7 @@ export default function App() {
   const [milestoneData, setMilestoneData] = useState([]);
   const [bomData, setBomData] = useState([]);
   const [mixOverviewData, setMixOverviewData] = useState([]);
+  const [roadImageUrl, setRoadImageUrl] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -70,6 +71,7 @@ export default function App() {
       setMilestoneData(data.milestones || []);
       setBomData(data.bom || []);
       setMixOverviewData(data.mixOverview || []);
+      setRoadImageUrl(data.road?.image_url || "");
     } catch (err) {
       console.error("Dashboard Error:", err);
     } finally {
@@ -164,6 +166,9 @@ export default function App() {
           <MapPanel
             selectedWard={selectedWard}
             selectedRoad={selectedRoad}
+            imageUrl={roadImageUrl}
+            onChanged={loadDashboard}
+            canEdit={canEdit}
           />
 
           <SummaryCard
@@ -175,18 +180,6 @@ export default function App() {
           />
 
         </div>
-
-        <ResourcePieChart
-          data={mixOverviewData}
-        />
-
-        <MaterialsTable
-          data={mixOverviewData}
-          road={selectedRoad}
-          onChanged={loadDashboard}
-          canEdit={canEdit}
-        />
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
           <MilestoneCircleChart
@@ -201,6 +194,22 @@ export default function App() {
           />
 
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+
+          <ResourcePieChart
+            data={mixOverviewData}
+          />
+
+          <MaterialsTable
+            data={mixOverviewData}
+            road={selectedRoad}
+            onChanged={loadDashboard}
+            canEdit={canEdit}
+          />
+
+        </div>
+
+        
 
         <BomTable
           data={bomData}
