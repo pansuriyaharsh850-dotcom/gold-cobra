@@ -1,7 +1,11 @@
-import React, { useState } from "react";
-import { MapPin, Pencil } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { MapPin, Pencil, Upload } from "lucide-react";
 
 import { roadApi } from "../api/client";
+
+// Keep uploaded images reasonably small since they're stored as base64
+// text directly in the database (no external file storage configured).
+const MAX_FILE_MB = 2;
 
 export default function MapPanel({
   selectedWard,
@@ -10,22 +14,51 @@ export default function MapPanel({
   onChanged,
   canEdit = false,
 }) {
+  const fileInputRef = useRef(null);
+
   const [editing, setEditing] = useState(false);
-  const [urlInput, setUrlInput] = useState(imageUrl || "");
+  const [preview, setPreview] = useState(imageUrl || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   function openEditor() {
-    setUrlInput(imageUrl || "");
+    setPreview(imageUrl || "");
     setError("");
     setEditing(true);
   }
 
+  function handleFilePicked(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setError(`Image is too large — please pick one under ${MAX_FILE_MB}MB.`);
+      return;
+    }
+
+    setError("");
+
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result);
+    reader.onerror = () => setError("Could not read that file.");
+    reader.readAsDataURL(file);
+  }
+
   async function handleSave() {
+    if (!preview) {
+      setError("Choose a photo first.");
+      return;
+    }
+
     setError("");
     try {
       setSaving(true);
-      await roadApi.setImage({ road: selectedRoad, imageUrl: urlInput });
+      await roadApi.setImage({ road: selectedRoad, imageUrl: preview });
       setEditing(false);
       onChanged && onChanged();
     } catch (err) {
@@ -53,25 +86,46 @@ export default function MapPanel({
             className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
             <Pencil size={14} />
-            {imageUrl ? "Change Image" : "Set Image"}
+            {imageUrl ? "Change Photo" : "Add Photo"}
           </button>
         )}
       </div>
 
       {editing ? (
         <div className="flex-1 min-h-[220px] sm:min-h-[280px] rounded-lg bg-gray-50 border border-gray-200 flex flex-col items-center justify-center text-center px-4 gap-3">
+
+          {preview ? (
+            <img
+              src={preview}
+              alt="Preview"
+              className="max-h-40 rounded-lg object-cover"
+            />
+          ) : (
+            <Upload className="text-gray-300" size={36} />
+          )}
+
           <input
-            type="text"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            placeholder="Paste image URL (https://...)"
-            className="w-full max-w-sm border rounded-lg px-3 py-2 text-sm"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFilePicked}
+            className="hidden"
           />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 text-sm font-medium"
+          >
+            Choose Photo From Device
+          </button>
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
+
           <div className="flex gap-2">
             <button
               type="button"
@@ -83,7 +137,7 @@ export default function MapPanel({
             <button
               type="button"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !preview}
               className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save"}
@@ -113,8 +167,8 @@ export default function MapPanel({
           </p>
           <p className="text-xs text-gray-400 mt-2 max-w-xs">
             {canEdit
-              ? "No image set yet — click \"Set Image\" above to add one."
-              : "No image available for this road yet."}
+              ? "No photo yet — click \"Add Photo\" above to upload one from your device."
+              : "No photo available for this road yet."}
           </p>
         </div>
       )}
