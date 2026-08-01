@@ -228,7 +228,7 @@ export default function Navbar({
   <img
     src="/logo.png"
     alt="Gold Cobra"
-    className="h-24 w-auto object-contain"
+    className="h-16 w-auto object-contain"
   />
 </div>
           </div>
