@@ -4,7 +4,7 @@ import { HardHat, Plus, Pencil, Trash2 } from "lucide-react";
 import { bomApi } from "../api/client";
 import CrudModal from "./CrudModal";
 
-const STATUS_OPTIONS = ["Pending", "In Transit", "Delivered"];
+const STATUS_OPTIONS = ["Problem", "Good"];
 
 const FIELDS = [
   { name: "item", label: "Item", type: "text", required: true },
@@ -28,13 +28,10 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
     }
 
     switch (status.toLowerCase()) {
-      case "ok":
+      case "Good":
         return "bg-green-100 text-green-700";
 
-      case "ok":
-        return "bg-yellow-100 text-yellow-700";
-
-      case "pending":
+      case "Problem":
         return "bg-red-100 text-red-700";
 
       default:
