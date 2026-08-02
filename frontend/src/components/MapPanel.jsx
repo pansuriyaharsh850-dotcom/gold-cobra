@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MapPin, Pencil, Upload, X } from "lucide-react";
 
 import { roadApi } from "../api/client";
@@ -178,9 +179,9 @@ export default function MapPanel({
         </div>
       )}
 
-      {fullscreenOpen && imageUrl && (
+      {fullscreenOpen && imageUrl && createPortal(
         <div
-          className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setFullscreenOpen(false)}
         >
           <button
@@ -202,7 +203,8 @@ export default function MapPanel({
             <p className="font-semibold text-lg">{selectedRoad}</p>
             <p className="text-sm text-gray-300">Ward {selectedWard}</p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
