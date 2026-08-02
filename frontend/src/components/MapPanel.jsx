@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { MapPin, Pencil, Upload } from "lucide-react";
+import { MapPin, Pencil, Upload, X } from "lucide-react";
 
 import { roadApi } from "../api/client";
 
@@ -20,6 +20,7 @@ export default function MapPanel({
   const [preview, setPreview] = useState(imageUrl || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
 
   function openEditor() {
     setPreview(imageUrl || "");
@@ -145,17 +146,21 @@ export default function MapPanel({
           </div>
         </div>
       ) : imageUrl ? (
-        <div className="flex-1 min-h-[220px] sm:min-h-[280px] rounded-lg overflow-hidden bg-gray-100 relative">
+        <button
+          type="button"
+          onClick={() => setFullscreenOpen(true)}
+          className="flex-1 min-h-[220px] sm:min-h-[280px] rounded-lg overflow-hidden bg-gray-100 relative text-left cursor-zoom-in group"
+        >
           <img
             src={imageUrl}
             alt={selectedRoad}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:opacity-90 transition"
           />
           <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white px-3 py-2">
             <p className="font-semibold">{selectedRoad}</p>
             <p className="text-xs text-gray-200">Ward {selectedWard}</p>
           </div>
-        </div>
+        </button>
       ) : (
         <div className="flex-1 min-h-[220px] sm:min-h-[280px] rounded-lg bg-gray-100 border border-dashed border-gray-300 flex flex-col items-center justify-center text-center px-4">
           <MapPin className="text-gray-300 mb-2" size={40} />
@@ -170,6 +175,33 @@ export default function MapPanel({
               ? "No photo yet — click \"Add Photo\" above to upload one from your device."
               : "No photo available for this road yet."}
           </p>
+        </div>
+      )}
+
+      {fullscreenOpen && imageUrl && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setFullscreenOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setFullscreenOpen(false)}
+            className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2"
+          >
+            <X size={24} />
+          </button>
+
+          <img
+            src={imageUrl}
+            alt={selectedRoad}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <div className="absolute bottom-6 left-0 right-0 text-center text-white">
+            <p className="font-semibold text-lg">{selectedRoad}</p>
+            <p className="text-sm text-gray-300">Ward {selectedWard}</p>
+          </div>
         </div>
       )}
 
