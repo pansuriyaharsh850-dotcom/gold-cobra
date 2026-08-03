@@ -13,18 +13,20 @@ import { PieChart } from "lucide-react";
 import useMediaQuery from "../hooks/useMediaQuery";
 
 const COLORS = [
-  "rgba(107, 76, 29)",
-  "rgba(6, 111, 40)", // green
-  "#f8c303", // amber
-  "#EF4444", // red
-  "#8B5CF6", // violet
-  "#EC4899", // pink
-  "#14B8A6", // teal
-  "rgba(3, 69, 169)", 
-  "rgba(234, 99, 4)",  
-  "#84CC16", // lime
+  "#8B5A2B", // Brown
+  "#16A34A", // Green
+  "#A78BFA", // Lavender
+  "#EAB308", // Gold
+  "#FB7185", // Coral
+  "#38BDF8", // Sky Blue
+  "#2DD4BF", // Aqua
+  "#2563EB", // Blue
+  "#F97316", // Orange
+  "#06B6D4", // Cyan
+  "#EC4899", // Pink
+  "#84CC16", // Lime
+  "#94A3B8", // Slate Gray
 ];
-
 export default function MilestoneCircleChart({ data }) {
 
   const isCompact = useMediaQuery("(max-width: 767px)");
