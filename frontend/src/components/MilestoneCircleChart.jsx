@@ -15,13 +15,13 @@ import useMediaQuery from "../hooks/useMediaQuery";
 const COLORS = [
   "rgba(107, 76, 29)",
   "#10B981", // green
-  "#F59E0B", // amber
+  "#f8c303", // amber
   "#EF4444", // red
   "#8B5CF6", // violet
   "#EC4899", // pink
   "#14B8A6", // teal
-  "rgba(3, 69, 169)", // orange
-  "rgba(234, 99, 4)", // indigo
+  "rgba(3, 69, 169)", 
+  "rgba(234, 99, 4)",  
   "#84CC16", // lime
 ];
 
