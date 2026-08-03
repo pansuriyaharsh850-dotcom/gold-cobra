@@ -13,15 +13,15 @@ import { PieChart } from "lucide-react";
 import useMediaQuery from "../hooks/useMediaQuery";
 
 const COLORS = [
-  "#3B82F6", // blue
+  "rgba(107, 76, 29)",
   "#10B981", // green
   "#F59E0B", // amber
   "#EF4444", // red
   "#8B5CF6", // violet
   "#EC4899", // pink
   "#14B8A6", // teal
-  "#F97316", // orange
-  "#6366F1", // indigo
+  "rgba(3, 69, 169)", // orange
+  "rgba(234, 99, 4)", // indigo
   "#84CC16", // lime
 ];
 
