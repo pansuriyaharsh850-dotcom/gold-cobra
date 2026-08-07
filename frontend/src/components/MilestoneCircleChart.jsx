@@ -20,6 +20,7 @@ const COLORS = [
   "#FB7185", // Coral
   "#38BDF8", // Sky Blue
   "#2DD4BF", // Aqua
+	"#EF29FF",//
   "#2563EB", // Blue
   "#F97316", // Orange
   "#06B6D4", // Cyan
