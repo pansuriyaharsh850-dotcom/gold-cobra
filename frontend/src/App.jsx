@@ -211,7 +211,6 @@ export default function App() {
         </div>
 
 
-
         <BomTable
           data={bomData}
           road={selectedRoad}
