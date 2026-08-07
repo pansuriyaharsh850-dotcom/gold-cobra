@@ -212,6 +212,7 @@ exports.updateMilestone = async (req, res) => {
     const {
       road,
       milestoneName,
+      totalLength,
       achievedLength
     } = req.body;
 
@@ -240,19 +241,21 @@ exports.updateMilestone = async (req, res) => {
       `
       UPDATE project_milestones
       SET
-        achieved_length = $1,
+        total_length = COALESCE($1, total_length),
+        achieved_length = $2,
         percentage_completed =
           CASE
-            WHEN total_length = 0 THEN 0
-            ELSE ROUND(($1::numeric / total_length) * 100, 2)
+            WHEN COALESCE($1, total_length) = 0 THEN 0
+            ELSE ROUND(($2::numeric / COALESCE($1, total_length)) * 100, 2)
           END,
         updated_at = NOW()
       WHERE
-        road_id = $2
-        AND milestone_name = $3
+        road_id = $3
+        AND milestone_name = $4
       RETURNING *;
       `,
       [
+        totalLength ?? null,
         achievedLength,
         roadId,
         milestoneName
