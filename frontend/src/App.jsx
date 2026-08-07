@@ -183,6 +183,20 @@ export default function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
+          <MilestoneCircleChart
+            data={milestoneData}
+          />
+
+          <MilestoneTable
+            data={milestoneData}
+            road={selectedRoad}
+            onChanged={loadDashboard}
+            canEdit={canEdit}
+          />
+
+        </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+
           <ResourcePieChart
             data={mixOverviewData}
           />
@@ -196,20 +210,7 @@ export default function App() {
 
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
-          <MilestoneCircleChart
-            data={milestoneData}
-          />
-
-          <MilestoneTable
-            data={milestoneData}
-            road={selectedRoad}
-            onChanged={loadDashboard}
-            canEdit={canEdit}
-          />
-
-        </div>
 
         <BomTable
           data={bomData}
