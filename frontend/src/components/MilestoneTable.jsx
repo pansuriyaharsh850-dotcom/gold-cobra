@@ -164,9 +164,9 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                 </div>
 
                 <div className="flex justify-between text-xs text-gray-600 mt-2">
-                  <span>Total Work: {row.target}</span>
+                  <span>Total Length: {row.target}</span>
                   <span className="text-green-600 font-semibold">
-                    Actual Work: {row.achieved}
+                    Achieved Length: {row.achieved}
                   </span>
                 </div>
 
@@ -208,8 +208,8 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
 
                   <th className="px-4 py-3 text-center">#</th>
                   <th className="px-4 py-3 text-left">Milestone</th>
-                  <th className="px-4 py-3 text-center">Total Work</th>
-                  <th className="px-4 py-3 text-center">Actual Work</th>
+                  <th className="px-4 py-3 text-center">Total Length</th>
+                  <th className="px-4 py-3 text-center">Achieved Length</th>
                   <th className="px-4 py-3 text-center min-w-[180px]">Progress</th>
                   {canEdit && <th className="px-4 py-3 text-center">Actions</th>}
 
