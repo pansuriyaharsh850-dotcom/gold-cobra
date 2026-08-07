@@ -28,8 +28,8 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
 
   const rows = data.map((row, index) => {
 
-    const target = Number(row.target || 0);
-    const achieved = Number(row.achieved || 0);
+    const target = String(row.target || 0);
+    const achieved = String(row.achieved || 0);
 
     const percentage =
       row.percentage_completed !== undefined &&
@@ -235,11 +235,11 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                     </td>
 
                     <td className="px-4 py-4 text-center">
-                      {row.target}m
+                      {row.target}
                     </td>
 
                     <td className="px-4 py-4 text-center text-green-600 font-bold">
-                      {row.achieved}m
+                      {row.achieved}
                     </td>
 
                     <td className="px-4 py-4">
