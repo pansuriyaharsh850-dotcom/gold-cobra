@@ -12,12 +12,12 @@ function getProgressColor(percentage) {
 
 const ADD_FIELDS = [
   { name: "name", label: "Milestone Name", type: "text", required: true },
-  { name: "target", label: "Total Length", type: "number", required: true },
-  { name: "achieved", label: "Achieved Length", type: "number", required: true },
+  { name: "target", label: "Total Length", type: "string", required: true },
+  { name: "achieved", label: "Achieved Length", type: "string", required: true },
 ];
 
 const EDIT_FIELDS = [
-  { name: "achieved", label: "Achieved Length", type: "number", required: true },
+  { name: "achieved", label: "Achieved Length", type: "string", required: true },
 ];
 
 export default function MilestoneTable({ data = [], road, onChanged, canEdit = true }) {
