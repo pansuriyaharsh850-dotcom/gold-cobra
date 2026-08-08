@@ -82,7 +82,7 @@ export default function ResourcePieChart({ data = [] }) {
         </div>
         <div className="min-w-0">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-            Material Distribution
+            TM Distribution
           </h2>
           <p className="text-xs sm:text-sm text-gray-500">
             Overview of available construction materials
