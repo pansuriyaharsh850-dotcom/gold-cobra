@@ -41,6 +41,8 @@ exports.getDashboardData = async (req, res) => {
         milestone_name AS name,
         total_length AS target,
         achieved_length AS achieved,
+        target_label,
+        achieved_label,
         percentage_completed
       FROM project_milestones
       WHERE road_id = $1

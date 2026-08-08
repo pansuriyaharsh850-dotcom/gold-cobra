@@ -36,6 +36,8 @@ exports.getMilestones = async (req, res) => {
         milestone_name AS name,
         total_length AS target,
         achieved_length AS achieved,
+        target_label,
+        achieved_label,
         percentage_completed
       FROM project_milestones
       WHERE road_id = $1
@@ -124,7 +126,9 @@ exports.addMilestone = async (req, res) => {
       road,
       milestoneName,
       totalLength,
-      achievedLength
+      achievedLength,
+      targetLabel,
+      achievedLabel
     } = req.body;
 
     if (!road || !milestoneName || totalLength == null || achievedLength == null) {
@@ -161,7 +165,9 @@ exports.addMilestone = async (req, res) => {
         milestone_name,
         total_length,
         achieved_length,
-        percentage_completed
+        percentage_completed,
+        target_label,
+        achieved_label
       )
       VALUES
       (
@@ -169,7 +175,9 @@ exports.addMilestone = async (req, res) => {
         $2,
         $3,
         $4,
-        $5
+        $5,
+        $6,
+        $7
       )
       RETURNING *;
       `,
@@ -178,7 +186,9 @@ exports.addMilestone = async (req, res) => {
         milestoneName,
         totalLength,
         achievedLength,
-        percentage
+        percentage,
+        targetLabel || `${totalLength}m`,
+        achievedLabel || `${achievedLength}m`
       ]
     );
 
@@ -212,7 +222,10 @@ exports.updateMilestone = async (req, res) => {
     const {
       road,
       milestoneName,
-      achievedLength
+      totalLength,
+      achievedLength,
+      targetLabel,
+      achievedLabel
     } = req.body;
 
     if (!road || !milestoneName || achievedLength == null) {
@@ -240,22 +253,28 @@ exports.updateMilestone = async (req, res) => {
       `
       UPDATE project_milestones
       SET
-        achieved_length = $1,
+        total_length = COALESCE($1, total_length),
+        achieved_length = $2,
+        target_label = COALESCE($5, target_label),
+        achieved_label = COALESCE($6, achieved_label),
         percentage_completed =
           CASE
-            WHEN total_length = 0 THEN 0
-            ELSE ROUND(($1::numeric / total_length) * 100, 2)
+            WHEN COALESCE($1, total_length) = 0 THEN 0
+            ELSE ROUND(($2::numeric / COALESCE($1, total_length)) * 100, 2)
           END,
         updated_at = NOW()
       WHERE
-        road_id = $2
-        AND milestone_name = $3
+        road_id = $3
+        AND milestone_name = $4
       RETURNING *;
       `,
       [
+        totalLength ?? null,
         achievedLength,
         roadId,
-        milestoneName
+        milestoneName,
+        targetLabel || null,
+        achievedLabel || null
       ]
     );
 

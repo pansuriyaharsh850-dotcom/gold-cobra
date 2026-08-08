@@ -11,20 +11,13 @@ function getProgressColor(percentage) {
 }
 
 // Lets the person type "1000m", "1000 m", or just "1000" — always
-// extracts the plain number before it's sent to the backend, so the
-// database column stays numeric no matter what was typed.
+// extracts the plain number before it's sent to the backend for math
+// (progress %), while the exact text they typed is kept separately
+// for display, so "100" stays "100" and "1000m" stays "1000m".
 function parseLength(val) {
   if (val == null || val === "") return 0;
   const num = parseFloat(String(val).replace(/[^0-9.]/g, ""));
   return isNaN(num) ? 0 : num;
-}
-
-// Shows "1700m" normally, or "-" when there's no value yet
-// instead of an odd-looking "0m".
-function formatLength(value) {
-  const num = Number(value);
-  if (!num) return "-";
-  return `${num}m`;
 }
 
 const ADD_FIELDS = [
@@ -64,6 +57,10 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
       name: row.name,
       target,
       achieved,
+      // Show exactly what was typed ("100", "1000m", etc). Fall back
+      // to the plain number only if no label was ever saved.
+      displayTarget: row.target_label || (target ? String(target) : "-"),
+      displayAchieved: row.achieved_label || (achieved ? String(achieved) : "-"),
       percentage,
       progressColor: getProgressColor(percentage),
     };
@@ -90,6 +87,8 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
         milestoneName: editingRow.name,
         totalLength,
         achievedLength,
+        targetLabel: values.target,
+        achievedLabel: values.achieved,
       });
     } else {
       await milestoneApi.add({
@@ -97,6 +96,8 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
         milestoneName: values.name,
         totalLength,
         achievedLength,
+        targetLabel: values.target,
+        achievedLabel: values.achieved,
       });
     }
 
@@ -186,9 +187,9 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                 </div>
 
                 <div className="flex justify-between text-xs text-gray-600 mt-2">
-                  <span>Total Length: {formatLength(row.target)}</span>
+                  <span>Total Length: {row.displayTarget}</span>
                   <span className="text-green-600 font-semibold">
-                    Achieved Length: {formatLength(row.achieved)}
+                    Achieved Length: {row.displayAchieved}
                   </span>
                 </div>
 
@@ -257,11 +258,11 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                     </td>
 
                     <td className="px-4 py-4 text-center">
-                      {formatLength(row.target)}
+                      {row.displayTarget}
                     </td>
 
                     <td className="px-4 py-4 text-center text-green-600 font-bold">
-                      {formatLength(row.achieved)}
+                      {row.displayAchieved}
                     </td>
 
                     <td className="px-4 py-4">
@@ -274,7 +275,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                       </div>
 
                       <div className="flex justify-between text-xs text-gray-600 mt-2">
-                        <span>{formatLength(row.achieved)} / {formatLength(row.target)}</span>
+                        <span>{row.displayAchieved} / {row.displayTarget}</span>
                         <span className="font-semibold">
                           {row.percentage.toFixed(2)}%
                         </span>
@@ -324,7 +325,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
         <CrudModal
           title={editingRow ? `Edit "${editingRow.name}"` : "Add Milestone"}
           fields={editingRow ? EDIT_FIELDS : ADD_FIELDS}
-          initialValues={editingRow ? { target: formatLength(editingRow.target), achieved: formatLength(editingRow.achieved) } : {}}
+          initialValues={editingRow ? { target: editingRow.displayTarget, achieved: editingRow.displayAchieved } : {}}
           onClose={() => {
             setModalOpen(false);
             setEditingRow(null);
