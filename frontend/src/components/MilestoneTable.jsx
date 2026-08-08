@@ -10,11 +10,21 @@ function getProgressColor(percentage) {
   return "bg-red-500";
 }
 
-// Safely extracts numeric value from inputs like "1700m", "1700 m", or 1700
+// Lets the person type "1000m", "1000 m", or just "1000" — always
+// extracts the plain number before it's sent to the backend, so the
+// database column stays numeric no matter what was typed.
 function parseLength(val) {
-  if (val == null) return 0;
+  if (val == null || val === "") return 0;
   const num = parseFloat(String(val).replace(/[^0-9.]/g, ""));
   return isNaN(num) ? 0 : num;
+}
+
+// Shows "1700m" normally, or "-" when there's no value yet
+// instead of an odd-looking "0m".
+function formatLength(value) {
+  const num = Number(value);
+  if (!num) return "-";
+  return `${num}m`;
 }
 
 const ADD_FIELDS = [
@@ -24,25 +34,26 @@ const ADD_FIELDS = [
 ];
 
 const EDIT_FIELDS = [
+  { name: "target", label: "Total Length", type: "text", required: true },
   { name: "achieved", label: "Achieved Length", type: "text", required: true },
 ];
 
 export default function MilestoneTable({ data = [], road, onChanged, canEdit = true }) {
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   const rows = data.map((row, index) => {
-    // Preserve raw string values for display (e.g. "1700m")
-    const rawTarget = row.target ?? row.totalLength ?? "";
-    const rawAchieved = row.achieved ?? row.achievedLength ?? "";
 
-    // Parse numeric values for progress calculation
-    const target = parseLength(rawTarget);
-    const achieved = parseLength(rawAchieved);
+    const target = Number(row.target || 0);
+    const achieved = Number(row.achieved || 0);
 
     const percentage =
-      target > 0
+      row.percentage_completed !== undefined &&
+      row.percentage_completed !== null
+        ? Number(row.percentage_completed)
+        : target > 0
         ? Number(((achieved / target) * 100).toFixed(2))
         : 0;
 
@@ -51,13 +62,12 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
       id: row.id,
       index,
       name: row.name,
-      displayTarget: rawTarget || target,
-      displayAchieved: rawAchieved || achieved,
       target,
       achieved,
       percentage,
       progressColor: getProgressColor(percentage),
     };
+
   });
 
   function openAdd() {
@@ -71,18 +81,22 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
   }
 
   async function handleSubmit(values) {
+    const totalLength = parseLength(values.target);
+    const achievedLength = parseLength(values.achieved);
+
     if (editingRow) {
       await milestoneApi.update({
         road,
         milestoneName: editingRow.name,
-        achievedLength: String(values.achieved),
+        totalLength,
+        achievedLength,
       });
     } else {
       await milestoneApi.add({
         road,
         milestoneName: values.name,
-        totalLength: String(values.target),
-        achievedLength: String(values.achieved),
+        totalLength,
+        achievedLength,
       });
     }
 
@@ -108,6 +122,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
 
   return (
     <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+
       <div className="flex items-center justify-between gap-2 mb-4 sm:mb-5">
         <div className="flex items-center gap-2">
           <Layers className="text-blue-600 shrink-0" size={20} />
@@ -130,16 +145,24 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
       </div>
 
       {rows.length === 0 ? (
+
         <div className="text-center py-8 text-gray-500">
           No milestone data found.
         </div>
+
       ) : (
+
         <>
+
           {/* Card list — phones only */}
           <div className="md:hidden space-y-3">
+
             {rows.map((row) => (
+
               <div key={row.key} className="gc-mobile-card">
+
                 <div className="flex items-start justify-between gap-3">
+
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center justify-center">
                       {row.index + 1}
@@ -152,6 +175,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                   <span className="text-sm font-bold text-gray-700 shrink-0">
                     {row.percentage.toFixed(1)}%
                   </span>
+
                 </div>
 
                 <div className="w-full bg-gray-200 rounded-full h-3 mt-3">
@@ -162,9 +186,9 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                 </div>
 
                 <div className="flex justify-between text-xs text-gray-600 mt-2">
-                  <span>Total Length: {row.displayTarget}</span>
+                  <span>Total Length: {formatLength(row.target)}</span>
                   <span className="text-green-600 font-semibold">
-                    Achieved Length: {row.displayAchieved}
+                    Achieved Length: {formatLength(row.achieved)}
                   </span>
                 </div>
 
@@ -188,30 +212,42 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                     </button>
                   </div>
                 )}
+
               </div>
+
             ))}
+
           </div>
 
           {/* Full table — tablet and up */}
           <div className="hidden md:block gc-table-scroll">
+
             <table className="w-full min-w-[640px] border-collapse">
+
               <thead>
+
                 <tr className="bg-blue-600 text-white">
+
                   <th className="px-4 py-3 text-center">#</th>
                   <th className="px-4 py-3 text-left">Milestone</th>
                   <th className="px-4 py-3 text-center">Total Length</th>
                   <th className="px-4 py-3 text-center">Achieved Length</th>
                   <th className="px-4 py-3 text-center min-w-[180px]">Progress</th>
                   {canEdit && <th className="px-4 py-3 text-center">Actions</th>}
+
                 </tr>
+
               </thead>
 
               <tbody>
+
                 {rows.map((row) => (
+
                   <tr
                     key={row.key}
                     className="border-b hover:bg-gray-50 transition"
                   >
+
                     <td className="px-4 py-4 text-center font-semibold">
                       {row.index + 1}
                     </td>
@@ -221,14 +257,15 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                     </td>
 
                     <td className="px-4 py-4 text-center">
-                      {row.displayTarget}
+                      {formatLength(row.target)}
                     </td>
 
                     <td className="px-4 py-4 text-center text-green-600 font-bold">
-                      {row.displayAchieved}
+                      {formatLength(row.achieved)}
                     </td>
 
                     <td className="px-4 py-4">
+
                       <div className="w-full bg-gray-200 rounded-full h-3">
                         <div
                           className={`${row.progressColor} h-3 rounded-full transition-all duration-500`}
@@ -237,11 +274,12 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                       </div>
 
                       <div className="flex justify-between text-xs text-gray-600 mt-2">
-                        <span>{row.displayAchieved} / {row.displayTarget}</span>
+                        <span>{formatLength(row.achieved)} / {formatLength(row.target)}</span>
                         <span className="font-semibold">
                           {row.percentage.toFixed(2)}%
                         </span>
                       </div>
+
                     </td>
 
                     {canEdit && (
@@ -267,23 +305,26 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                         </div>
                       </td>
                     )}
+
                   </tr>
+
                 ))}
+
               </tbody>
+
             </table>
+
           </div>
+
         </>
+
       )}
 
       {canEdit && modalOpen && (
         <CrudModal
           title={editingRow ? `Edit "${editingRow.name}"` : "Add Milestone"}
           fields={editingRow ? EDIT_FIELDS : ADD_FIELDS}
-          initialValues={
-            editingRow
-              ? { achieved: editingRow.displayAchieved }
-              : {}
-          }
+          initialValues={editingRow ? { target: formatLength(editingRow.target), achieved: formatLength(editingRow.achieved) } : {}}
           onClose={() => {
             setModalOpen(false);
             setEditingRow(null);
@@ -292,6 +333,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
           submitLabel={editingRow ? "Update" : "Add"}
         />
       )}
+
     </div>
   );
 }
