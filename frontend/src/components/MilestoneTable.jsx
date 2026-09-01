@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layers, Plus, Pencil, Trash2 } from "lucide-react";
+import { Layers, Plus, Pencil, Trash2, Calendar } from "lucide-react";
 
 import { milestoneApi } from "../api/client";
 import CrudModal from "./CrudModal";
@@ -10,25 +10,41 @@ function getProgressColor(percentage) {
   return "bg-red-500";
 }
 
-// Lets the person type "1000m", "1000 m", or just "1000" — always
-// extracts the plain number before it's sent to the backend for math
-// (progress %), while the exact text they typed is kept separately
-// for display, so "100" stays "100" and "1000m" stays "1000m".
 function parseLength(val) {
   if (val == null || val === "") return 0;
   const num = parseFloat(String(val).replace(/[^0-9.]/g, ""));
   return isNaN(num) ? 0 : num;
 }
 
+// Days elapsed since Start Date, counting up every day. Once End Date
+// has passed, it stops at End Date instead of continuing to climb.
+function calculateDays(startDate, endDate) {
+  if (!startDate || startDate === "-") return null;
+
+  const start = new Date(startDate + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const end = endDate && endDate !== "-" ? new Date(endDate + "T00:00:00") : null;
+  const cutoff = end && today > end ? end : today;
+
+  const diffDays = Math.floor((cutoff - start) / (1000 * 60 * 60 * 24)) + 1;
+  return diffDays > 0 ? diffDays : 0;
+}
+
 const ADD_FIELDS = [
   { name: "name", label: "Milestone Name", type: "text", required: true },
   { name: "target", label: "Total Length", type: "text", required: true },
   { name: "achieved", label: "Achieved Length", type: "text", required: true },
+  { name: "startDate", label: "Start Date", type: "date" },
+  { name: "endDate", label: "End Date", type: "date" },
 ];
 
 const EDIT_FIELDS = [
   { name: "target", label: "Total Length", type: "text", required: true },
   { name: "achieved", label: "Achieved Length", type: "text", required: true },
+  { name: "startDate", label: "Start Date", type: "date" },
+  { name: "endDate", label: "End Date", type: "date" },
 ];
 
 export default function MilestoneTable({ data = [], road, onChanged, canEdit = true }) {
@@ -50,6 +66,10 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
         ? Number(((achieved / target) * 100).toFixed(2))
         : 0;
 
+    const startDate = row.start_date || "-";
+    const endDate = row.end_date || "-";
+    const days = calculateDays(row.start_date, row.end_date);
+
     return {
       key: row.id || index,
       id: row.id,
@@ -57,10 +77,11 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
       name: row.name,
       target,
       achieved,
-      // Show exactly what was typed ("100", "1000m", etc). Fall back
-      // to the plain number only if no label was ever saved.
       displayTarget: row.target_label || (target ? String(target) : "-"),
       displayAchieved: row.achieved_label || (achieved ? String(achieved) : "-"),
+      startDate,
+      endDate,
+      days,
       percentage,
       progressColor: getProgressColor(percentage),
     };
@@ -81,24 +102,21 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
     const totalLength = parseLength(values.target);
     const achievedLength = parseLength(values.achieved);
 
+    const payload = {
+      road,
+      milestoneName: editingRow ? editingRow.name : values.name,
+      totalLength,
+      achievedLength,
+      targetLabel: values.target,
+      achievedLabel: values.achieved,
+      startDate: values.startDate || null,
+      endDate: values.endDate || null,
+    };
+
     if (editingRow) {
-      await milestoneApi.update({
-        road,
-        milestoneName: editingRow.name,
-        totalLength,
-        achievedLength,
-        targetLabel: values.target,
-        achievedLabel: values.achieved,
-      });
+      await milestoneApi.update(payload);
     } else {
-      await milestoneApi.add({
-        road,
-        milestoneName: values.name,
-        totalLength,
-        achievedLength,
-        targetLabel: values.target,
-        achievedLabel: values.achieved,
-      });
+      await milestoneApi.add(payload);
     }
 
     setModalOpen(false);
@@ -193,6 +211,15 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                   </span>
                 </div>
 
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-2 pt-2 border-t">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} /> {row.startDate} to {row.endDate}
+                  </span>
+                  <span className="font-medium text-blue-600">
+                    {row.days != null ? `${row.days} Days` : "-"}
+                  </span>
+                </div>
+
                 {canEdit && (
                   <div className="flex justify-end gap-3 mt-3 border-t pt-3">
                     <button
@@ -223,7 +250,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
           {/* Full table — tablet and up */}
           <div className="hidden md:block gc-table-scroll">
 
-            <table className="w-full min-w-[640px] border-collapse">
+            <table className="w-full min-w-[820px] border-collapse">
 
               <thead>
 
@@ -233,6 +260,9 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
                   <th className="px-4 py-3 text-left">Milestone</th>
                   <th className="px-4 py-3 text-center">Total Length</th>
                   <th className="px-4 py-3 text-center">Achieved Length</th>
+                  <th className="px-4 py-3 text-center">Start Date</th>
+                  <th className="px-4 py-3 text-center">End Date</th>
+                  <th className="px-4 py-3 text-center">Days</th>
                   <th className="px-4 py-3 text-center min-w-[180px]">Progress</th>
                   {canEdit && <th className="px-4 py-3 text-center">Actions</th>}
 
@@ -263,6 +293,20 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
 
                     <td className="px-4 py-4 text-center text-green-600 font-bold">
                       {row.displayAchieved}
+                    </td>
+
+                    <td className="px-4 py-4 text-center text-sm text-gray-600">
+                      {row.startDate}
+                    </td>
+
+                    <td className="px-4 py-4 text-center text-sm text-gray-600">
+                      {row.endDate}
+                    </td>
+
+                    <td className="px-4 py-4 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                        {row.days != null ? `${row.days} Days` : "-"}
+                      </span>
                     </td>
 
                     <td className="px-4 py-4">
@@ -325,7 +369,16 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
         <CrudModal
           title={editingRow ? `Edit "${editingRow.name}"` : "Add Milestone"}
           fields={editingRow ? EDIT_FIELDS : ADD_FIELDS}
-          initialValues={editingRow ? { target: editingRow.displayTarget, achieved: editingRow.displayAchieved } : {}}
+          initialValues={
+            editingRow
+              ? {
+                  target: editingRow.displayTarget,
+                  achieved: editingRow.displayAchieved,
+                  startDate: editingRow.startDate !== "-" ? editingRow.startDate : "",
+                  endDate: editingRow.endDate !== "-" ? editingRow.endDate : "",
+                }
+              : {}
+          }
           onClose={() => {
             setModalOpen(false);
             setEditingRow(null);
