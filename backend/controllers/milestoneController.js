@@ -38,7 +38,9 @@ exports.getMilestones = async (req, res) => {
         achieved_length AS achieved,
         target_label,
         achieved_label,
-        percentage_completed
+        percentage_completed,
+        TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,
+        TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date
       FROM project_milestones
       WHERE road_id = $1
       ORDER BY id;
@@ -52,25 +54,22 @@ exports.getMilestones = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Get Milestones Error:", err);
 
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
 };
+
 
 // ==============================================
 // GET Milestone By ID
 // GET /api/milestones/:id
 // ==============================================
 exports.getMilestoneById = async (req, res) => {
-
   try {
-
     const { id } = req.params;
 
     const result = await db.query(
@@ -82,6 +81,10 @@ exports.getMilestoneById = async (req, res) => {
         total_length,
         achieved_length,
         percentage_completed,
+        target_label,
+        achieved_label,
+        TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,
+        TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date,
         updated_at
       FROM project_milestones
       WHERE id = $1;
@@ -102,39 +105,43 @@ exports.getMilestoneById = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Get Milestone Error:", err);
 
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
-
 };
+
 
 // ==============================================
 // ADD Milestone
 // POST /api/milestones
 // ==============================================
 exports.addMilestone = async (req, res) => {
-
   try {
-
     const {
       road,
       milestoneName,
       totalLength,
       achievedLength,
       targetLabel,
-      achievedLabel
+      achievedLabel,
+      startDate,
+      endDate
     } = req.body;
 
-    if (!road || !milestoneName || totalLength == null || achievedLength == null) {
+    if (
+      !road ||
+      !milestoneName ||
+      totalLength == null ||
+      achievedLength == null
+    ) {
       return res.status(400).json({
         success: false,
-        message: "road, milestoneName, totalLength and achievedLength are required."
+        message:
+          "road, milestoneName, totalLength and achievedLength are required."
       });
     }
 
@@ -155,7 +162,9 @@ exports.addMilestone = async (req, res) => {
     const percentage =
       Number(totalLength) === 0
         ? 0
-        : Number(((achievedLength / totalLength) * 100).toFixed(2));
+        : Number(
+            ((Number(achievedLength) / Number(totalLength)) * 100).toFixed(2)
+          );
 
     const result = await db.query(
       `
@@ -167,7 +176,9 @@ exports.addMilestone = async (req, res) => {
         achieved_length,
         percentage_completed,
         target_label,
-        achieved_label
+        achieved_label,
+        start_date,
+        end_date
       )
       VALUES
       (
@@ -177,9 +188,22 @@ exports.addMilestone = async (req, res) => {
         $4,
         $5,
         $6,
-        $7
+        $7,
+        $8,
+        $9
       )
-      RETURNING *;
+      RETURNING
+        id,
+        road_id,
+        milestone_name,
+        total_length,
+        achieved_length,
+        percentage_completed,
+        target_label,
+        achieved_label,
+        TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,
+        TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date,
+        updated_at;
       `,
       [
         roadId,
@@ -188,7 +212,9 @@ exports.addMilestone = async (req, res) => {
         achievedLength,
         percentage,
         targetLabel || `${totalLength}m`,
-        achievedLabel || `${achievedLength}m`
+        achievedLabel || `${achievedLength}m`,
+        startDate || null,
+        endDate || null
       ]
     );
 
@@ -199,39 +225,38 @@ exports.addMilestone = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Add Milestone Error:", err);
 
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
-
 };
+
 
 // ==============================================
 // UPDATE Milestone
 // PUT /api/milestones
 // ==============================================
 exports.updateMilestone = async (req, res) => {
-
   try {
-
     const {
       road,
       milestoneName,
       totalLength,
       achievedLength,
       targetLabel,
-      achievedLabel
+      achievedLabel,
+      startDate,
+      endDate
     } = req.body;
 
     if (!road || !milestoneName || achievedLength == null) {
       return res.status(400).json({
         success: false,
-        message: "road, milestoneName and achievedLength are required."
+        message:
+          "road, milestoneName and achievedLength are required."
       });
     }
 
@@ -255,18 +280,40 @@ exports.updateMilestone = async (req, res) => {
       SET
         total_length = COALESCE($1, total_length),
         achieved_length = $2,
+
         target_label = COALESCE($5, target_label),
         achieved_label = COALESCE($6, achieved_label),
+
+        start_date = COALESCE($7, start_date),
+        end_date = COALESCE($8, end_date),
+
         percentage_completed =
           CASE
             WHEN COALESCE($1, total_length) = 0 THEN 0
-            ELSE ROUND(($2::numeric / COALESCE($1, total_length)) * 100, 2)
+            ELSE ROUND(
+              ($2::numeric / COALESCE($1, total_length)) * 100,
+              2
+            )
           END,
+
         updated_at = NOW()
+
       WHERE
         road_id = $3
         AND milestone_name = $4
-      RETURNING *;
+
+      RETURNING
+        id,
+        road_id,
+        milestone_name,
+        total_length,
+        achieved_length,
+        percentage_completed,
+        target_label,
+        achieved_label,
+        TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,
+        TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date,
+        updated_at;
       `,
       [
         totalLength ?? null,
@@ -274,7 +321,9 @@ exports.updateMilestone = async (req, res) => {
         roadId,
         milestoneName,
         targetLabel || null,
-        achievedLabel || null
+        achievedLabel || null,
+        startDate || null,
+        endDate || null
       ]
     );
 
@@ -292,26 +341,22 @@ exports.updateMilestone = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Update Milestone Error:", err);
 
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
-
 };
+
 
 // ==============================================
 // DELETE Milestone
 // DELETE /api/milestones/:id
 // ==============================================
 exports.deleteMilestone = async (req, res) => {
-
   try {
-
     const { id } = req.params;
 
     const result = await db.query(
@@ -332,14 +377,11 @@ exports.deleteMilestone = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Delete Milestone Error:", err);
 
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
-
 };
