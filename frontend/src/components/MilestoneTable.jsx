@@ -16,19 +16,16 @@ function parseLength(val) {
   return isNaN(num) ? 0 : num;
 }
 
-// Days elapsed since Start Date, counting up every day. Once End Date
-// has passed, it stops at End Date instead of continuing to climb.
-function calculateDays(startDate, endDate) {
+// Days elapsed since Start Date, always counted through to today —
+// End Date is just informational and never stops this count.
+function calculateDays(startDate) {
   if (!startDate || startDate === "-") return null;
 
   const start = new Date(startDate + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const end = endDate && endDate !== "-" ? new Date(endDate + "T00:00:00") : null;
-  const cutoff = end && today > end ? end : today;
-
-  const diffDays = Math.floor((cutoff - start) / (1000 * 60 * 60 * 24)) + 1;
+  const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
   return diffDays > 0 ? diffDays : 0;
 }
 
@@ -68,7 +65,7 @@ export default function MilestoneTable({ data = [], road, onChanged, canEdit = t
 
     const startDate = row.start_date || "-";
     const endDate = row.end_date || "-";
-    const days = calculateDays(row.start_date, row.end_date);
+    const days = calculateDays(row.start_date);
 
     return {
       key: row.id || index,
