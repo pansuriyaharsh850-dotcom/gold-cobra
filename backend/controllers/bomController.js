@@ -54,28 +54,23 @@ exports.getBom = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("BOM Error:", err);
-
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
 };
 
 // ==============================================
-// GET Single BOM Item
+// GET Single BOM Item with Detailed Logs
 // GET /api/bom/:id
 // ==============================================
 exports.getBomById = async (req, res) => {
-
   try {
-
     const { id } = req.params;
 
-    const result = await db.query(
+    const bomResult = await db.query(
       `
       SELECT
         id,
@@ -94,29 +89,37 @@ exports.getBomById = async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "BOM item not found."
-      });
+    if (bomResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "BOM item not found." });
     }
+
+    // Fetch associated detailed logs (now including unit_count)
+    const logsResult = await db.query(
+      `
+      SELECT 
+        id,
+        bom_id,
+        log_date AS date,
+        quantity AS qty,
+        unit_count AS count,
+        unit_rate AS "unitRate",
+        total_cost AS "totalCost"
+      FROM bom_logs
+      WHERE bom_id = $1
+      ORDER BY log_date DESC, id DESC;
+      `,
+      [id]
+    );
 
     res.json({
       success: true,
-      bom: result.rows[0]
+      bom: bomResult.rows[0],
+      logs: logsResult.rows
     });
-
   } catch (err) {
-
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
-
+    console.error("Get BOM Details Error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
-
 };
 
 // ==============================================
@@ -124,9 +127,7 @@ exports.getBomById = async (req, res) => {
 // POST /api/bom
 // ==============================================
 exports.addBom = async (req, res) => {
-
   try {
-
     const {
       road,
       item,
@@ -201,16 +202,12 @@ exports.addBom = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
-
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
-
 };
 
 // ==============================================
@@ -218,9 +215,7 @@ exports.addBom = async (req, res) => {
 // PUT /api/bom/:id
 // ==============================================
 exports.updateBom = async (req, res) => {
-
   try {
-
     const { id } = req.params;
 
     const {
@@ -276,16 +271,12 @@ exports.updateBom = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
-
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
-
 };
 
 // ==============================================
@@ -293,9 +284,7 @@ exports.updateBom = async (req, res) => {
 // DELETE /api/bom/:id
 // ==============================================
 exports.deleteBom = async (req, res) => {
-
   try {
-
     const { id } = req.params;
 
     const result = await db.query(
@@ -316,14 +305,95 @@ exports.deleteBom = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
-
     res.status(500).json({
       success: false,
       message: err.message
     });
-
   }
+};
 
+// ==============================================
+// ADD Detailed Log Entry for BOM Item
+// POST /api/bom/:id/logs
+// Now supports: count x quantity x unitRate
+// e.g. 3 JCB x 10 hours x ₹900 = ₹27,000
+// ==============================================
+exports.addBomLog = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, qty, unitRate, count } = req.body;
+
+    if (!date || qty === undefined || qty === null) {
+      return res.status(400).json({ success: false, message: "Date and quantity are required." });
+    }
+
+    const unitCount = count == null || count === "" ? 1 : Number(count);
+
+    const logResult = await db.query(
+      `
+      INSERT INTO bom_logs (bom_id, log_date, quantity, unit_rate, unit_count)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, bom_id, log_date AS date, quantity AS qty, unit_count AS count, unit_rate AS "unitRate", total_cost AS "totalCost";
+      `,
+      [id, date, qty, unitRate || 0, unitCount]
+    );
+
+    // Main item's Quantity = sum of (hours x count) across all logs (effective usage)
+    // Main item's Total Cost = sum of each log's total_cost (already count-aware)
+    await db.query(
+      `
+      UPDATE bill_of_materials
+      SET 
+        quantity = (SELECT COALESCE(SUM(quantity * unit_count), 0) FROM bom_logs WHERE bom_id = $1),
+        total_cost = (SELECT COALESCE(SUM(total_cost), 0) FROM bom_logs WHERE bom_id = $1)
+      WHERE id = $1;
+      `,
+      [id]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Log entry added successfully.",
+      log: logResult.rows[0]
+    });
+  } catch (err) {
+    console.error("Add Log Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ==============================================
+// DELETE Detailed Log Entry
+// DELETE /api/bom/logs/:logId
+// ==============================================
+exports.deleteBomLog = async (req, res) => {
+  try {
+    const { logId } = req.params;
+
+    const logCheck = await db.query("SELECT bom_id FROM bom_logs WHERE id = $1", [logId]);
+    if (logCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Log entry not found." });
+    }
+
+    const bomId = logCheck.rows[0].bom_id;
+
+    await db.query("DELETE FROM bom_logs WHERE id = $1", [logId]);
+
+    await db.query(
+      `
+      UPDATE bill_of_materials
+      SET 
+        quantity = (SELECT COALESCE(SUM(quantity * unit_count), 0) FROM bom_logs WHERE bom_id = $1),
+        total_cost = (SELECT COALESCE(SUM(total_cost), 0) FROM bom_logs WHERE bom_id = $1)
+      WHERE id = $1;
+      `,
+      [bomId]
+    );
+
+    res.json({ success: true, message: "Log entry deleted successfully." });
+  } catch (err) {
+    console.error("Delete Log Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
