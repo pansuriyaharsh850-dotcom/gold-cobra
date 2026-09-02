@@ -43,7 +43,9 @@ exports.getDashboardData = async (req, res) => {
         achieved_length AS achieved,
         target_label,
         achieved_label,
-        percentage_completed
+        percentage_completed,
+        TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date,
+        TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date
       FROM project_milestones
       WHERE road_id = $1
       ORDER BY id;
