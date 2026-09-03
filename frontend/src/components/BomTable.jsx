@@ -16,6 +16,8 @@ const FIELDS = [
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS },
 ];
 
+const MAX_PLATE_LENGTH = 50;
+
 export default function BomTable({ data = [], road, onChanged, canEdit = true }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -26,12 +28,13 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
   const [logs, setLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  // New Log Form State — now includes "count" (e.g. how many JCBs)
+  // New Log Form State — includes count and number plate
   const [formData, setFormData] = useState({
     date: "",
     count: "1",
     quantity: "",
     unitRate: "",
+    numberPlate: "",
   });
 
   const getStatusStyle = (status) => {
@@ -111,7 +114,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
 
   async function openLogModal(item) {
     setSelectedItem(item);
-    setFormData({ date: "", count: "1", quantity: "", unitRate: item.unit_rate || "" });
+    setFormData({ date: "", count: "1", quantity: "", unitRate: item.unit_rate || "", numberPlate: "" });
     setLogModalOpen(true);
     setLoadingLogs(true);
 
@@ -143,6 +146,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
         count: formData.count === "" ? 1 : Number(formData.count),
         qty: Number(formData.quantity),
         unitRate: formData.unitRate ? Number(formData.unitRate) : selectedItem.unit_rate || 0,
+        numberPlate: formData.numberPlate.trim() || null,
       };
 
       const res = await bomApi.addLog(selectedItem.id, payload);
@@ -154,6 +158,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
           count: "1",
           quantity: "",
           unitRate: selectedItem.unit_rate || "",
+          numberPlate: "",
         });
 
         if (onChanged) onChanged();
@@ -184,7 +189,6 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
     }
   };
 
-  // Live preview of this log's cost as the person types
   const previewCount = formData.count === "" ? 1 : Number(formData.count) || 0;
   const previewQty = Number(formData.quantity) || 0;
   const previewRate = formData.unitRate ? Number(formData.unitRate) : (selectedItem?.unit_rate || 0);
@@ -372,7 +376,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
 
       {logModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-blue-600 text-white p-5 flex items-start justify-between">
               <div>
                 <h3 className="text-xl font-bold">
@@ -397,7 +401,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                   onSubmit={handleAddLogEntry}
                   className="bg-gray-50 border rounded-xl p-4 space-y-3"
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 items-end">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Date
@@ -422,6 +426,20 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                         placeholder="e.g. 3"
                         value={formData.count}
                         onChange={(e) => setFormData({ ...formData, count: e.target.value })}
+                        className="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Number Plate
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={50}
+                        placeholder="e.g. GJ-05-AB-1234"
+                        value={formData.numberPlate}
+                        onChange={(e) => setFormData({ ...formData, numberPlate: e.target.value })}
                         className="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
@@ -478,6 +496,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                       <th className="p-3">Date</th>
                       <th className="p-3">Item</th>
                       <th className="p-3 text-center">No. of Units</th>
+                      <th className="p-3">Number Plate</th>
                       <th className="p-3 text-center">Quantity ({selectedItem.unit})</th>
                       <th className="p-3 text-center">Unit Rate</th>
                       <th className="p-3 text-center">Total Cost</th>
@@ -487,13 +506,13 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                   <tbody className="divide-y">
                     {loadingLogs ? (
                       <tr>
-                        <td colSpan={canEdit ? 8 : 7} className="text-center py-6 text-gray-500">
+                        <td colSpan={canEdit ? 9 : 8} className="text-center py-6 text-gray-500">
                           Loading logs...
                         </td>
                       </tr>
                     ) : logs.length === 0 ? (
                       <tr>
-                        <td colSpan={canEdit ? 8 : 7} className="text-center py-6 text-gray-400">
+                        <td colSpan={canEdit ? 9 : 8} className="text-center py-6 text-gray-400">
                           No daily log records added yet.
                         </td>
                       </tr>
@@ -509,6 +528,7 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                             </td>
                             <td className="p-3 text-gray-700 font-medium">{selectedItem.item}</td>
                             <td className="p-3 text-center font-semibold">{count}</td>
+                            <td className="p-3 text-gray-700">{log.numberPlate || "-"}</td>
                             <td className="p-3 text-center font-semibold">
                               {log.qty} {selectedItem.unit}
                             </td>

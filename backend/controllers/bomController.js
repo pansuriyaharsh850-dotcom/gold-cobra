@@ -93,7 +93,6 @@ exports.getBomById = async (req, res) => {
       return res.status(404).json({ success: false, message: "BOM item not found." });
     }
 
-    // Fetch associated detailed logs (now including unit_count)
     const logsResult = await db.query(
       `
       SELECT 
@@ -102,6 +101,7 @@ exports.getBomById = async (req, res) => {
         log_date AS date,
         quantity AS qty,
         unit_count AS count,
+        number_plate AS "numberPlate",
         unit_rate AS "unitRate",
         total_cost AS "totalCost"
       FROM bom_logs
@@ -316,31 +316,30 @@ exports.deleteBom = async (req, res) => {
 // ==============================================
 // ADD Detailed Log Entry for BOM Item
 // POST /api/bom/:id/logs
-// Now supports: count x quantity x unitRate
-// e.g. 3 JCB x 10 hours x ₹900 = ₹27,000
+// Now supports: count x quantity x unitRate, plus an optional
+// Number Plate (up to 50 characters) for equipment-type items.
 // ==============================================
 exports.addBomLog = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, qty, unitRate, count } = req.body;
+    const { date, qty, unitRate, count, numberPlate } = req.body;
 
     if (!date || qty === undefined || qty === null) {
       return res.status(400).json({ success: false, message: "Date and quantity are required." });
     }
 
     const unitCount = count == null || count === "" ? 1 : Number(count);
+    const plate = (numberPlate || "").toString().slice(0, 50) || null;
 
     const logResult = await db.query(
       `
-      INSERT INTO bom_logs (bom_id, log_date, quantity, unit_rate, unit_count)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, bom_id, log_date AS date, quantity AS qty, unit_count AS count, unit_rate AS "unitRate", total_cost AS "totalCost";
+      INSERT INTO bom_logs (bom_id, log_date, quantity, unit_rate, unit_count, number_plate)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, bom_id, log_date AS date, quantity AS qty, unit_count AS count, number_plate AS "numberPlate", unit_rate AS "unitRate", total_cost AS "totalCost";
       `,
-      [id, date, qty, unitRate || 0, unitCount]
+      [id, date, qty, unitRate || 0, unitCount, plate]
     );
 
-    // Main item's Quantity = sum of (hours x count) across all logs (effective usage)
-    // Main item's Total Cost = sum of each log's total_cost (already count-aware)
     await db.query(
       `
       UPDATE bill_of_materials
