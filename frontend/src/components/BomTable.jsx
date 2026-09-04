@@ -44,18 +44,6 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
     numberPlate: "",
   });
 
-  const getStatusStyle = (status) => {
-    if (!status) return "bg-gray-100 text-gray-700";
-    switch (status.toLowerCase()) {
-      case "good":
-        return "bg-green-100 text-green-700";
-      case "problem":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-blue-100 text-blue-700";
-    }
-  };
-
   function openAdd() {
     setEditingItem(null);
     setModalOpen(true);
@@ -249,9 +237,6 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                     <p className="text-xs text-gray-500 mt-0.5">{item.type}</p>
                   </div>
 
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(item.status)}`}>
-                    {item.status}
-                  </span>
                 </div>
 
                 <div className="flex justify-between text-sm text-gray-600 mt-3 border-t pt-2">
@@ -301,7 +286,6 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                   <th className="px-4 py-3 text-center">Unit</th>
                   <th className="px-4 py-3 text-center">Unit Rate</th>
                   <th className="px-4 py-3 text-center">Total Cost</th>
-                  <th className="px-4 py-3 text-center">Status</th>
                   <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
@@ -327,12 +311,6 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                     <td className="px-4 py-4 text-center font-semibold">
                       ₹{Number(item.total_cost || 0).toLocaleString()}
                     </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-3">
                         <button
