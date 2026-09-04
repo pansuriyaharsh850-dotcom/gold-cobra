@@ -2,31 +2,26 @@ import axios from "axios";
 
 const API = "https://gold-cobra.onrender.com/api";
 
-const client = axios.create({
-  baseURL: API,
-  headers: {
-    "Content-Type": "application/json",
-  },
+const client = axios.create({ baseURL: API });
+
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem("gold_cobra_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // ==============================================
-// Attach Login Token
+// Dashboard API
 // ==============================================
-client.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("gold_cobra_token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+export const dashboardApi = {
+  getDashboard: (road) => client.get(`/dashboard?road=${encodeURIComponent(road)}`),
+  updateMilestone: (payload) => client.put("/dashboard/update-milestone", payload),
+};
 
 // ==============================================
-// Auth
+// Auth API
 // ==============================================
 export const authApi = {
   login: (payload) => client.post("/auth/login", payload),
@@ -39,28 +34,28 @@ export const bomApi = {
   add: (payload) => client.post("/bom", payload),
   update: (id, payload) => client.put(`/bom/${id}`, payload),
   remove: (id) => client.delete(`/bom/${id}`),
+
+  // --- Detailed daily log sub-records ---
+  getById: (id) => client.get(`/bom/${id}`),
+  addLog: (id, payload) => client.post(`/bom/${id}/logs`, payload),
+  deleteLog: (logId) => client.delete(`/bom/logs/${logId}`),
 };
 
 // ==============================================
-// Milestones
+// Milestones API
 // ==============================================
 export const milestoneApi = {
-  get: (road) =>
-    client.get("/milestones", {
-      params: { road },
-    }),
-
-  getById: (id) =>
-    client.get(`/milestones/${id}`),
-
-  add: (payload) =>
-    client.post("/milestones", payload),
-
-  update: (payload) =>
-    client.put("/milestones", payload),
-
-  remove: (id) =>
-    client.delete(`/milestones/${id}`),
+  add: (payload) => client.post("/milestones", payload),
+  update: (idOrPayload, payload) => {
+    if (typeof idOrPayload === "number" || typeof idOrPayload === "string") {
+      return client.put(`/milestones/${idOrPayload}`, payload);
+    }
+    if (idOrPayload && idOrPayload.id) {
+      return client.put(`/milestones/${idOrPayload.id}`, idOrPayload);
+    }
+    return client.put("/milestones", idOrPayload);
+  },
+  remove: (id) => client.delete(`/milestones/${id}`),
 };
 
 // ==============================================
@@ -91,7 +86,4 @@ export const roadApi = {
   setImage: (payload) => client.put("/roads/image", payload),
 };
 
-// ==============================================
-// Export Axios Client
-// ==============================================
 export default client;
