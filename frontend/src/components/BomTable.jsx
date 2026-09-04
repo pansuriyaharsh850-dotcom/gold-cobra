@@ -16,7 +16,14 @@ const FIELDS = [
   { name: "status", label: "Status", type: "select", options: STATUS_OPTIONS },
 ];
 
-const MAX_PLATE_LENGTH = 50;
+const MAX_PLATE_LENGTH = 500;
+
+function normaliseNumberPlates(value) {
+  return value
+    .split(/[\n,]/)
+    .map((plate) => plate.trim().toUpperCase())
+    .filter(Boolean);
+}
 
 export default function BomTable({ data = [], road, onChanged, canEdit = true }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -139,14 +146,15 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
   const handleAddLogEntry = async (e) => {
     e.preventDefault();
     if (!selectedItem) return;
+    const numberPlates = normaliseNumberPlates(formData.numberPlate);
 
     try {
       const payload = {
         date: formData.date,
-        count: formData.count === "" ? 1 : Number(formData.count),
+        count: numberPlates.length || (formData.count === "" ? 1 : Number(formData.count)),
         qty: Number(formData.quantity),
         unitRate: formData.unitRate ? Number(formData.unitRate) : selectedItem.unit_rate || 0,
-        numberPlate: formData.numberPlate.trim() || null,
+        numberPlate: numberPlates.join(", ") || null,
       };
 
       const res = await bomApi.addLog(selectedItem.id, payload);
@@ -432,15 +440,23 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Number Plate
+                        Number Plates
                       </label>
-                      <input
-                        type="text"
-                        maxLength={50}
-                        placeholder="e.g. GJ-05-AB-1234"
+                      <textarea
+                        rows={1}
+                        maxLength={MAX_PLATE_LENGTH}
+                        placeholder="GJ-05-AB-1234, GJ-11-EA-5351"
                         value={formData.numberPlate}
-                        onChange={(e) => setFormData({ ...formData, numberPlate: e.target.value })}
-                        className="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        onChange={(e) => {
+                          const numberPlate = e.target.value;
+                          const numberPlates = normaliseNumberPlates(numberPlate);
+                          setFormData({
+                            ...formData,
+                            numberPlate,
+                            count: numberPlates.length ? String(numberPlates.length) : formData.count,
+                          });
+                        }}
+                        className="w-full resize-y border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
 
@@ -484,6 +500,9 @@ export default function BomTable({ data = [], road, onChanged, canEdit = true })
                   <p className="text-xs text-gray-500">
                     {previewCount} × {previewQty} {selectedItem.unit} × ₹{previewRate} ={" "}
                     <strong className="text-gray-800">₹{previewCost.toLocaleString()}</strong>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Add multiple plates with a comma or on separate lines. Unit count updates automatically.
                   </p>
                 </form>
               )}
